@@ -16,7 +16,7 @@ int main(int argc, char **argv, char **envp)
     struct ELF_File *f;
     void **newstack;
     int i, envc, progarg;
-    char *dir, *fil;
+    char *dir, *fil, *longnm, *dirs[4];
     int maybe = 0;
 
     progarg = -1;
@@ -41,8 +41,19 @@ int main(int argc, char **argv, char **envp)
     whereAmI(argv[0], &dir, &fil);
     elfload_dlinstdir = dir;
 
+    longnm = malloc(1024 * sizeof(char));
+    if (longnm == NULL) {
+        perror("malloc");
+        exit(1);
+    }
+    sprintf(longnm, "%s/../lib/gelfload", dir);
+    dirs[0] = longnm;
+    dirs[1] = "./usr/local/lib";
+    dirs[2] = "./lib/x86_64-linux-gnu";
+    dirs[3] = "./usr/lib/x86_64-linux-gnu";
+
     /* load them all in */
-    f = loadELF(argv[progarg], 1, &dir, maybe);
+    f = loadELF(argv[progarg], 4, dirs, maybe);
 
     if (!f) {
         /* try just execing it */

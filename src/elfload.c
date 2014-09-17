@@ -59,14 +59,6 @@ struct ELF_File *loadELF(const char *nm, int dirc, const char **dirv, int maybe)
     f->nm = strdup(nm);
 
     /* if this is a host library, circumvent all the ELF stuff and go straight for the host */
-    printf("lib: %s\n", nm);
-
-    if (strcmp(nm, "libc.so.6") == 0) {
-      printf("Load libc...\n");
-      f->hostlib = HOSTLIB_DOHO;
-      f->prog = dlopen("libSystem.B.dylib", RTLD_NOW|RTLD_GLOBAL);
-      return f;
-    }
 
     if (strncmp(nm, "libhost_", 8) == 0) {
         f->hostlib = HOSTLIB_HOST;
@@ -480,19 +472,6 @@ void *findELFSymbol(const char *nm, struct ELF_File *onlyin, int localin, int no
 
         f = &(elfFiles[i]);
         if (onlyin && f != onlyin) continue;
-
-        /* potentially rewrite bridged symbols */
-        if (f->hostlib == HOSTLIB_DOHO) {
-            char lsym[1024];
-            if (strcmp(nm, "stdin") == 0 || strcmp(nm, "stdout") == 0 || strcmp(nm, "stderr") == 0) {
-                snprintf(lsym, 1024, "__%sp", nm);
-            }
-            hostsym = dlsym(f->prog, lsym);
-            if (hostsym) return hostsym;
-            hostsym = dlsym(f->prog, nm);
-            if (hostsym) return hostsym;
-            continue;
-        }
 
         /* if this is a host library, just try the host method */
         if (f->hostlib == HOSTLIB_HOST) {
