@@ -8,6 +8,7 @@
 #define HOSTLIB_NOT  0
 #define HOSTLIB_HOST 1
 #define HOSTLIB_DL   2
+#define HOSTLIB_DOHO 3
 
 /* Basic structure for ELF files mid-load */
 struct ELF_File {
