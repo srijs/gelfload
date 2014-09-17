@@ -25,7 +25,7 @@ void *bbuffer(void *loc, size_t sz) {
             loc -= offset;
         }
 
-        ret = mmap(loc, sz, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON|MAP_FIXED,
+        ret = mmap(loc, sz, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON,
                    -1, 0);
         if (ret == loc) ret = wantloc;
     } else {
