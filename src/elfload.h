@@ -61,11 +61,11 @@ struct ELF_File {
     size_t jmprelsz;
 };
 
-struct ELF_File *loadELF(const char *nm, const char *instdir, int maybe);
+struct ELF_File *loadELF(const char *nm, int dirc, const char **dirv, int maybe);
 void relocateELFs();
 void relocateELF(int fileNo, struct ELF_File *f);
 void initELF(struct ELF_File *except);
-void readFile(const char *nm, const char *instdir, struct ELF_File *ef);
+void readFile(const char *nm, int dirc, const char **dirv, struct ELF_File *ef);
 void closeFile(struct ELF_File *ef);
 void *findELFSymbol(const char *nm, struct ELF_File *onlyin, int localin, int notin,
                     ElfNative_Sym **syminto);

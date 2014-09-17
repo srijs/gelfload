@@ -38,7 +38,7 @@ struct ELF_File elfFiles[MAX_ELF_FILES];
 int elfFileCount = 0;
 
 /* The function to actually load ELF files into memory */
-struct ELF_File *loadELF(const char *nm, const char *instdir, int maybe)
+struct ELF_File *loadELF(const char *nm, int dirc, const char **dirv, int maybe)
 {
     int i, fileNo, phdri;
     struct ELF_File *f;
@@ -130,7 +130,7 @@ struct ELF_File *loadELF(const char *nm, const char *instdir, int maybe)
         return f;
     }
 
-    readFile(nm, instdir, f);
+    readFile(nm, dirc, dirv, f);
 
     /* make sure it's an ELF file */
     f->ehdr = (ElfNative_Ehdr *) f->prog;
@@ -268,7 +268,7 @@ struct ELF_File *loadELF(const char *nm, const char *instdir, int maybe)
     /* load in dependencies */
     for (curdyn = f->dynamic; curdyn && curdyn->d_tag != DT_NULL; curdyn++) {
         if (curdyn->d_tag == DT_NEEDED) {
-            loadELF(f->strtab + curdyn->d_un.d_val, instdir, 0);
+            loadELF(f->strtab + curdyn->d_un.d_val, dirc, dirv, 0);
         }
     }
 
@@ -600,15 +600,10 @@ ElfNative_Word elf_hash(const unsigned char *name)
 }
 
 /* A handy function to read a file or mmap it, as appropriate */
-void readFile(const char *nm, const char *instdir, struct ELF_File *ef)
+void readFile(const char *nm, int dirc, const char **dirv, struct ELF_File *ef)
 {
-    /* try with instdir */
-    char *longnm = malloc(strlen(nm) + strlen(instdir) + 18);
-    if (longnm == NULL) {
-        perror("malloc");
-        exit(1);
-    }
-    sprintf(longnm, "%s/../lib/gelfload/%s", instdir, nm);
+    int diri = 0;
+    char *longnm;
 
 #ifdef HAVE_MMAP
 {
@@ -618,15 +613,21 @@ void readFile(const char *nm, const char *instdir, struct ELF_File *ef)
 
     /* use mmap. First, open the file and get its length */
     fd = open(nm, O_RDONLY);
-    if (fd == -1) {
-        fd = open(longnm, O_RDONLY);
-
-        if (fd == -1) {
-            perror(nm);
+    while (fd == -1 && diri < dirc) {
+        longnm = malloc(strlen(dirv[diri]) + 1 + strlen(nm));
+        if (longnm == NULL) {
+            perror("malloc");
             exit(1);
         }
+        sprintf(longnm, "%s/%s", dirv[diri], nm);
+        fd = open(longnm, O_RDONLY);
+        free(longnm);
+        diri++;
     }
-    free(longnm);
+    if (fd == -1) {
+        perror(nm);
+        exit(1);
+    }
     if (fstat(fd, &sbuf) < 0) {
         perror(nm);
         exit(1);
@@ -653,15 +654,21 @@ void readFile(const char *nm, const char *instdir, struct ELF_File *ef)
 
     /* OK, use stdio */
     f = fopen(nm, "rb");
-    if (f == NULL) {
-        f = fopen(longnm, "rb");
-
-        if (f == NULL) {
-            perror(nm);
+    while (f == NULL && diri < dirc) {
+        longnm = malloc(strlen(dirv[diri]) + 1 + strlen(nm));
+        if (longnm == NULL) {
+            perror("malloc");
             exit(1);
         }
+        sprintf(longnm, "%s/%s", dirv[diri], nm);
+        f = fopen(longnm, "rb");
+        free(longnm);
+        diri++;
     }
-    free(longnm);
+    if (f == NULL) {
+        perror(nm);
+        exit(1);
+    }
     
     /* start with a 512-byte buffer */
     bufsz = 512;

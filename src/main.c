@@ -42,7 +42,7 @@ int main(int argc, char **argv, char **envp)
     elfload_dlinstdir = dir;
 
     /* load them all in */
-    f = loadELF(argv[progarg], dir, maybe);
+    f = loadELF(argv[progarg], 1, &dir, maybe);
 
     if (!f) {
         /* try just execing it */
